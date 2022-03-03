@@ -1,0 +1,75 @@
+-->when we require dynamic route ? 
+    in this example user recommend there restaurant 
+    now for their recommended website we want to assign a proper website (route)
+    now since any no. of website can be recommended by users so we cannot hardcode route 
+    so we develop dynamic route for it 
+
+--> DEVELOPING DYNAMIC ROUTE USING EXPRESS
+
+    step 1 --> The place where user recommend new restaurant we add the link to this new dynamic route 
+
+     <div class="restaurant-actions">
+      <a href="/restaurants/r1">View Restaurant</a>
+     </div>
+
+     step 2 --> add a detail page which will serve as dynamic page based on each user recommend 
+                by adding--> restaurant-detail.ejs
+
+                <h1>TITLE OF THE RESTAURANT <%= rid %></h1> --> adding this kind of line--> restaurant-detail.ejs --> make page dynamic 
+
+     step 3 -->  Now we define a dynamic route in app.js 
+
+                app.get('/restaurants/:id',function(req,res){
+                    const restaurantId =  req.params.id; //we get our id 
+                    res.render('restaurant-detail',{rid:restaurantId});
+                }); 
+
+    step 4 --> when user requested /restaurants/:id we will render restaurant-detail page with data passed to restaurant-detail page based on id 
+
+                in restaurant-detail.ejs 
+                <h1>TITLE OF THE RESTAURANT <%= rid %></h1>
+
+
+    /restaurants/:id
+    here we should note that these detail page might not load css files correctly 
+    as css file is sibling of restaurant but here it might consider it sibling of id so child of restaurants
+    so to solve this problem we do not load css files like 'style.css'. actually we load it like '/style.css'
+
+    1st mtd (style.css) consider this as sibling of  /restaurants/:id (i.e actual address of style it consider is /restaurants/style.css ) 
+    2nd mtd (/style.css) make it sibling of one level up (i.e of restaurants sibling) (so, actual address become /style.css) 
+
+
+    step 5 -->  ADDING new id field in restaurants.json file 
+
+            in app.js 
+            0th  --> npm install uuid 
+            1st --> const uuid =require('uuid');
+
+                    it is an object with different method 
+                
+            2nd --> in app.post(/recommend) --> which add new restaurant to our restaurant.json 
+            restaurant.id = uuid.v4(); //which will give us a unique id for each new restaurnat 
+
+            3rd --> <a href="/restaurants/<%= restaurant.id %>">View Restaurant</a>
+                    in restaurant-item (a dynamic page which we are making which output details of this restaurant)
+                    we access this id 
+
+   step 5 --> HANDLING WRONG PATH --> we should also handle a case when user requested a page which is not present 
+
+                //defining dynamic route --> for every new restaurant added in recommend form we make one route for it
+                app.get("/restaurants/:id", function (req, res) {
+                const restaurantId = req.params.id;
+                const filePath = path.join(__dirname, "data", "restaurants.json");
+                const fileData = fs.readFileSync(filePath); //raw data of json file in json format
+
+                const storedRestaurants = JSON.parse(fileData); //javascript array format
+
+                for (const restaurant of storedRestaurants) {
+                    if (restaurant.id === restaurantId) {
+                    return res.render("restaurant-detail", { restaurant: restaurant });
+                    }
+                }
+
+               // SENDING ERROR RESPONSE 
+                res.render('404');
+                });

@@ -8,11 +8,12 @@ const path = require("path");
 const express = require("express");
 const app = express();
 
+//package for id generation
+const uuid = require("uuid");
+
 //setting up ejs engine
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
-
-app.listen(3000);
 
 //linking other files(css,js,images,etc)
 app.use(express.static("public"));
@@ -66,6 +67,7 @@ app.get("/confirm", function (req, res) {
 //handling form data using post request
 app.post("/recommend", function (req, res) {
   const restaurant = req.body; //form data in javascript array format
+  restaurant.id = uuid.v4();
   const filePath = path.join(__dirname, "data", "restaurants.json");
   const fileData = fs.readFileSync(filePath); //raw data of json file in json format
 
@@ -91,3 +93,34 @@ how to generate dynamic pages using EJS PACKAGE OF EXPRESS
     view engine--> we tell express that we want to use special engine for processing our view files
     ejs--> name of engine
 */
+
+/*Code for Dynamic Route */
+
+//defining dynamic route --> for every new restaurant added in recommend form we make one route for it
+app.get("/restaurants/:id", function (req, res) {
+  const restaurantId = req.params.id;
+  const filePath = path.join(__dirname, "data", "restaurants.json");
+  const fileData = fs.readFileSync(filePath); //raw data of json file in json format
+
+  const storedRestaurants = JSON.parse(fileData); //javascript array format
+
+  for (const restaurant of storedRestaurants) {
+    if (restaurant.id === restaurantId) {
+      return res.render("restaurant-detail", { restaurant: restaurant });
+    }
+  }
+  // SENDING ERROR RESPONSE
+  res.status(404).render("404");
+});
+
+//this will handle any page which is not handeled by any upper routes
+app.use(function (req, res) {
+  res.status(404).render("404");
+});
+
+//middleware to handle server side error
+app.use(function (error, req, res, next) {
+  res.status(500).render("500");
+});
+
+app.listen(3000);
